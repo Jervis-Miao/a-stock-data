@@ -627,3 +627,70 @@ ASTOCK_LIVE_TRADE_DATE=2026-09-04 ASTOCK_LIVE_MARGIN_DATE=2026-09-03 python3 -m 
 [Apache License 2.0](./LICENSE) — 自由使用，注明出处即可。
 
 **作者：** Simon 林 · X [@linsizhen](https://x.com/linsizhen) · 邮箱：[simonlin0423@gmail.com](mailto:simonlin0423@gmail.com)
+
+## 本地量化研究界面
+
+### 1. 进入项目并检查 Python
+
+在 macOS 或 Linux 的终端中执行。建议使用 Python 3.12，当前界面已用该版本验证。
+
+```bash
+cd /Volumes/workspace/project/a-stock-data
+python3 --version
+```
+
+### 2. 创建虚拟环境并安装依赖
+
+首次启动时执行以下命令。安装依赖需要联网。
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-dashboard.txt
+```
+
+### 3. 启动并打开界面
+
+```bash
+python -m streamlit run app.py --server.address=127.0.0.1 --server.port=8501
+```
+
+保持终端运行，在浏览器打开 [http://127.0.0.1:8501](http://127.0.0.1:8501)。
+如果终端提示 8501 端口已被占用，将启动命令中的 `--server.port=8501` 改成
+`--server.port=8502`，然后打开 [http://127.0.0.1:8502](http://127.0.0.1:8502)。
+
+### 4. 试用选股和回测
+
+页面默认选择「通达信盘后行情」。点击侧栏「更新真实行情」下载后，即可选股或回测。
+
+也可以切换到「模拟数据」试跑，或选择「上传 CSV」导入复权日线。文件需包含 `date,code,open,close,amount`，可选 `name`（股票名称）和 `sector`（所属板块）。
+日期格式为 `YYYY-MM-DD`，代码为六位数字，开盘价和收盘价采用同一复权口径，成交额单位为元。
+「数据状态」页可以联网查询指定日期的通达信盘后包。
+
+### 5. 停止和再次启动
+
+在运行 Streamlit 的终端中按 `Ctrl+C` 停止服务。以后在新终端中启动时，执行：
+
+```bash
+cd /Volumes/workspace/project/a-stock-data
+source .venv/bin/activate
+python -m streamlit run app.py --server.address=127.0.0.1 --server.port=8501
+```
+
+通达信日线按日期保存到项目内的 `.market-data/`，每个交易日一个压缩 CSV，最多保留 180 份。
+下载时复用已有文件，重启后可直接使用所选范围内已缓存的行情。选股和回测只加载当前下载范围，
+最大为 90 个工作日。
+
+已有行情缓存且截止日期选为今天时，北京时间工作日 18:00 后打开或刷新页面会尝试补取当天盘后包。
+盘后包发布时间由数据源决定。历史缺口仍可通过「更新真实行情」补齐。
+
+### 当前行情、持仓和一周波段
+
+「国际行情」展示主要海外指数与报价时间。刷新页面时会保留当前导航标签。
+「A股行情」可查询东方财富行业和概念板块涨幅、领涨股、板块资金明细及上涨异动。
+异动采用交易所严重异常波动口径。「我的持仓」手动填写六位股票代码、持股数量和每股成本，
+同一代码再次保存会更新记录，持仓保存在项目下的 `.portfolio.sqlite3`。
+当前行情与持仓报价在对应页面打开时每分钟刷新，也可以点击「立即刷新」。
+
+「我的持仓」下方的「一周波段观察」使用最近最多 30 份通达信盘后缓存，至少需要 21 个交易日。
+从「选股与回测」更新行情后，可查看持仓趋势和满足近五日涨幅、20 日均线及成交额条件的候选。

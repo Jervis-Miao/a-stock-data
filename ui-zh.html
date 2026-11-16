@@ -1,0 +1,96 @@
+<script>
+(() => {
+    const labels = new Map(Object.entries({
+        "Sort ascending": "升序排列",
+        "Sort descending": "降序排列",
+        "Statistics": "统计",
+        "Format": "数值格式",
+        "Autosize": "自动调整列宽",
+        "Pin column": "固定列",
+        "Unpin column": "取消固定列",
+        "Hide column": "隐藏列",
+        "Copy column name": "复制列名",
+        "Dataframe column menu": "表格列菜单",
+        "Automatic": "自动",
+        "Localized": "本地化数字",
+        "Plain": "普通数字",
+        "Compact": "简写数字",
+        "Dollar": "美元",
+        "Euro": "欧元",
+        "Yen": "日元",
+        "Percent": "百分比",
+        "Scientific": "科学计数法",
+        "Accounting": "会计格式",
+        "Values": "有效值",
+        "Empty": "空值",
+        "Distinct": "不同值",
+        "Average": "平均值",
+        "Standard deviation": "标准差",
+        "Minimum": "最小值",
+        "25th percentile": "第 25 百分位",
+        "Median": "中位数",
+        "75th percentile": "第 75 百分位",
+        "Maximum": "最大值",
+        "Sum": "合计",
+        "Minimum length": "最小长度",
+        "Maximum length": "最大长度",
+        "Average length": "平均长度",
+        "Range": "跨度",
+        "No data": "无数据",
+        "Based on sample": "基于样本计算",
+        "Select all": "全选",
+        "Show/hide columns": "显示或隐藏列",
+        "Download as CSV": "下载 CSV",
+        "Search": "搜索",
+        "Fullscreen": "全屏",
+        "Exit fullscreen": "退出全屏",
+        "Upload": "上传",
+        "Browse files": "浏览文件",
+        "Drag and drop files here": "将文件拖到此处",
+        "Stop": "停止",
+        "Deploy": "部署",
+        "Rerun": "重新运行",
+        "Settings": "设置",
+        "Print": "打印",
+        "Clear cache": "清除缓存",
+        "About": "关于"
+    }));
+    const controls = [
+        '[data-testid="stDataFrameColumnMenu"]',
+        '[data-testid="stDataFrameColumnFormattingMenu"]',
+        '[data-testid="stDataFrameStatisticsMenu"]',
+        '[data-testid="stDataFrameColumnVisibilityMenu"]',
+        '[data-testid="stDataFrame"] button',
+        '[data-testid="stFileUploader"] button',
+        '[data-testid="stFileUploaderDropzoneInstructions"]',
+        '[data-testid="stHeader"] button',
+        '[data-testid="stMainMenuList"]'
+    ].join(",");
+
+    function translate(element) {
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+        while (walker.nextNode()) {
+            const node = walker.currentNode;
+            const translated = labels.get(node.nodeValue.trim());
+            if (translated) node.nodeValue = translated;
+        }
+        for (const item of [element, ...element.querySelectorAll("[aria-label], [title]")]) {
+            for (const attribute of ["aria-label", "title"]) {
+                const translated = labels.get(item.getAttribute(attribute));
+                if (translated) item.setAttribute(attribute, translated);
+            }
+        }
+    }
+
+    function translateControls() {
+        document.querySelectorAll(controls).forEach(translate);
+    }
+
+    // Streamlit renders menus lazily and replaces widgets on rerun.
+    window.stockDashboardChineseObserver?.disconnect();
+    const observer = new MutationObserver(translateControls);
+    observer.observe(document.body, {childList: true, subtree: true, characterData: true});
+    window.stockDashboardChineseObserver = observer;
+    translateControls();
+})();
+</script>

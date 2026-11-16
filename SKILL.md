@@ -1067,6 +1067,7 @@ def _em_day(value):
 HTTP GET，GBK 编码，`~` 分隔 88 个字段，不封IP。
 
 ```python
+import urllib.error
 import urllib.request
 
 def tencent_quote(codes: list[str]) -> dict[str, dict]:
@@ -1097,10 +1098,21 @@ def tencent_quote(codes: list[str]) -> dict[str, dict]:
         key_of[p] = c    # 显式前缀入参原样返回，裸代码返回裸代码
 
     url = "https://qt.gtimg.cn/q=" + ",".join(prefixed)
-    req = urllib.request.Request(url)
-    req.add_header("User-Agent", "Mozilla/5.0")
-    resp = urllib.request.urlopen(req, timeout=10)
-    data = resp.read().decode("gbk")
+    headers = {"User-Agent": "Mozilla/5.0"}
+    direct = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    try:
+        response = direct.open(urllib.request.Request(url, headers=headers), timeout=10)
+    except urllib.error.HTTPError:
+        raise
+    except urllib.error.URLError:
+        proxies = urllib.request.getproxies()
+        if not proxies.get("https") or urllib.request.proxy_bypass("qt.gtimg.cn"):
+            raise
+        # Build a fresh opener so changes to the system proxy take effect.
+        proxied = urllib.request.build_opener(urllib.request.ProxyHandler(proxies))
+        response = proxied.open(urllib.request.Request(url, headers=headers), timeout=10)
+    with response:
+        data = response.read().decode("gbk")
 
     result = {}
     for line in data.strip().split(";"):
@@ -2878,7 +2890,7 @@ _BOARD_PERIOD = {
 }
 
 def board_fund_flow(board_type: str = "industry", period: str = "today",
-                    top_n: int = 20) -> dict:
+                    top_n: int = 20, *, sort_by_change: bool = False) -> dict:
     """
     板块资金流向排名（按主力净流入降序）。
     board_type: industry(行业) / concept(概念) / region(地域)
@@ -2886,6 +2898,7 @@ def board_fund_flow(board_type: str = "industry", period: str = "today",
     返回: {board_type, period, total, rows:[{rank, name, code, change_pct,
            main_net(主力净额,元), main_pct(主力净占比,%), leader(领涨股),
            # 仅 today：super_large_net/large_net/medium_net/small_net(超大/大/中/小单净额,元)}]}
+    sort_by_change=True 按涨跌幅降序，默认按主力净额降序。
     注：板块级只有 今日/5日/10日（无 3日，个股级才有）。主力净额 = 超大单 + 大单。
     """
     if board_type not in _BOARD_FS:
@@ -2901,9 +2914,10 @@ def board_fund_flow(board_type: str = "industry", period: str = "today",
         fields += ["f66", "f72", "f78", "f84"]   # 超大/大/中/小单净额
 
     url = "https://push2.eastmoney.com/api/qt/clist/get"
+    page_size = min(200, top_n) if sort_by_change else 200
     base = {
-        "pz": "200", "po": "1", "np": "1",
-        "fltt": "2", "invt": "2", "fid": fid,       # fid + po=1：按该周期主力净额降序
+        "pz": str(page_size), "po": "1", "np": "1",
+        "fltt": "2", "invt": "2", "fid": f_chg if sort_by_change else fid,
         "fs": _BOARD_FS[board_type],
         "fields": ",".join(dict.fromkeys(fields)),  # 去重保序
     }
@@ -2913,10 +2927,10 @@ def board_fund_flow(board_type: str = "industry", period: str = "today",
     def _page(pn: int):
         r = em_get(url, params={**base, "pn": str(pn)},
                    headers={"User-Agent": UA}, timeout=15)
+        r.raise_for_status()
         d = r.json().get("data") or {}
         return (d.get("diff") or []), int(d.get("total") or 0)
 
-    _PAGE = 200
     items, total = _page(1)
     pn = 2
     while len(items) < top_n:
@@ -2927,7 +2941,7 @@ def board_fund_flow(board_type: str = "industry", period: str = "today",
             break                      # 防御：API 提前返空则停止，避免死循环
         items += more
         pn += 1
-        if len(more) < _PAGE:
+        if len(more) < page_size:
             break                      # 不足一页＝已到末页（total 缺失时的收敛条件）
     total = max(total, len(items))
 

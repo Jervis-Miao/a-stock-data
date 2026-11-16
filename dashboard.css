@@ -1,0 +1,55 @@
+[data-testid="stAppViewContainer"] {
+    background: #f3f6fa;
+}
+[data-testid="stHeader"] {
+    background: rgba(243, 246, 250, .94);
+}
+[data-testid="stMainBlockContainer"],
+section.main .block-container {
+    max-width: 1450px;
+    padding-top: 4rem;
+}
+[data-testid="stSidebar"] {
+    border-right: 1px solid #dde5ed;
+}
+.st-key-workspace_navigation [role="radiogroup"] {
+    gap: .35rem;
+    padding: .35rem;
+    border: 1px solid #dce5ef;
+    border-radius: .75rem;
+    background: white;
+    width: 100%;
+}
+.st-key-workspace_navigation [role="radiogroup"] label {
+    position: relative;
+    width: 100%;
+    margin: 0;
+    border-radius: .5rem;
+    padding: .45rem .85rem;
+}
+.st-key-workspace_navigation [role="radiogroup"] label:has(input:checked) {
+    background: #e3edf9;
+    color: #143e72;
+}
+.st-key-workspace_navigation [role="radiogroup"] label:has(input:focus-visible) {
+    outline: 2px solid #3265a0;
+    outline-offset: 2px;
+}
+[data-testid="stVerticalBlockBorderWrapper"],
+[data-testid="stMetric"] {
+    background: white;
+    border: 1px solid #dce5ef;
+    border-radius: .85rem;
+}
+[data-testid="stMetric"] {
+    padding: .8rem 1rem;
+}
+[data-testid="stDataFrame"] {
+    border-radius: .65rem;
+    overflow: hidden;
+}
+
+.portfolio-header-hover,
+.portfolio-header-hover * {
+    cursor: move !important;
+}
